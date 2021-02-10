@@ -1,3 +1,3 @@
 # MakeAppIcons
 
-Creats correctly sized icons given an `icon.png` file to populate the AppIcon folder for an iOS project. Places icons in folder containing the original `icon.png`.
+Creats correctly sized icons from a source image file to populate the AppIcon folder for an iOS project. Places resulting icons in the specified destination folder.
