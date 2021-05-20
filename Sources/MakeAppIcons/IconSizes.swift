@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum IconSizes: CaseIterable, CustomStringConvertible {
+enum AppIconSizes: CaseIterable, CustomStringConvertible {
 	case iPhoneNotification2x
 	case iPhoneNotification3x
 	case iPhoneSettings2x
@@ -65,6 +65,57 @@ enum IconSizes: CaseIterable, CustomStringConvertible {
 				return NSSize(width: 167, height: 167)
 			case .AppStore1x:
 				return NSSize(width: 1024, height: 1024)
+		}
+	}
+	
+	var description: String {
+		return "\(Int(rawValue.width))x\(Int(rawValue.height))"
+	}
+}
+
+enum MessagesIconSizes: CaseIterable, CustomStringConvertible {
+	case iPhoneSettings2x
+	case iPhoneSettings3x
+	case MessagesiPhone2x
+	case MessagesiPhone3x
+	case iPadSettings
+	case MessagesiPad
+	case MessagesiPadPro
+	case AppStoreiOS
+	case MessagesAppStore
+	case Messages2x27
+	case Messages3x27
+	case Messages2x32
+	case Messages3x32
+	
+	var rawValue: NSSize {
+		switch self {
+			case .iPhoneSettings2x:
+				return NSSize(width: 58, height: 58)
+			case .iPhoneSettings3x:
+				return NSSize(width: 87, height: 87)
+			case .MessagesiPhone2x:
+				return NSSize(width: 120, height: 90)
+			case .MessagesiPhone3x:
+				return NSSize(width: 180, height: 135)
+			case .iPadSettings:
+				return NSSize(width: 58, height: 58)
+			case .MessagesiPad:
+				return NSSize(width: 134, height: 100)
+			case .MessagesiPadPro:
+				return NSSize(width: 148, height: 110)
+			case .AppStoreiOS:
+				return NSSize(width: 1024, height: 1024)
+			case .MessagesAppStore:
+				return NSSize(width: 1024, height: 768)
+			case .Messages2x27:
+				return NSSize(width: 54, height: 40)
+			case .Messages3x27:
+				return NSSize(width: 81, height: 60)
+			case .Messages2x32:
+				return NSSize(width: 64, height: 48)
+			case .Messages3x32:
+				return NSSize(width: 96, height: 72)
 		}
 	}
 	

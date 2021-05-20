@@ -4,6 +4,12 @@ import AppKit
 struct MakeAppIcon: ParsableCommand {
 	static let configuration = CommandConfiguration(abstract: "Generates assets needed to fill the AppIcon asset for iOS apps.")
 	
+	@Flag(help: "Generate icon for iMessage Sticker Pack.")
+	var messages = false
+	
+	@Flag(help: "Fill in transparent areas with white.")
+	var fill = false
+	
 	@Argument(help: "Path to source image.")
 	var source: String
 	
@@ -30,7 +36,23 @@ struct MakeAppIcon: ParsableCommand {
 		let imageRect = NSScreen.main!.convertRectFromBacking(NSRect(origin: .zero, size: size))
 		let resized = NSImage(size: imageRect.size)
 		resized.lockFocus()
-		image.draw(in: imageRect)
+		if size.width == size.height {
+			image.draw(in: imageRect)
+		} else {
+			let landscape = size.width > size.height
+			let scale = landscape ? size.width / size.height : size.height / size.width
+			let croppedSize = landscape ? NSSize(width: image.size.width * scale, height: image.size.height) : NSSize(width: image.size.width, height: image.size.height * scale)
+			let croppedOffset = landscape ? image.size.width - image.size.width * scale : image.size.height - image.size.height * scale
+			let croppedOrigin = landscape ? CGPoint(x: croppedOffset / 2, y: 0) : CGPoint(x: 0, y: croppedOffset / 2)
+			let croppedRect = CGRect(origin: croppedOrigin, size: croppedSize)
+			
+			if fill {
+				NSColor.white.setFill()
+				croppedRect.fill()
+			}
+			
+			image.draw(in: imageRect, from: croppedRect, operation: .sourceOver, fraction: 1)
+		}
 		resized.unlockFocus()
 		return resized.tiffRepresentation!
 	}
@@ -45,9 +67,16 @@ struct MakeAppIcon: ParsableCommand {
 			try fileManager.createDirectory(at: destURL, withIntermediateDirectories: true, attributes: nil)
 		}
 		
-		for iconSize in IconSizes.allCases {
-			let resizedIcon = resize(image: icon, size: iconSize.rawValue)
-			fileManager.createFile(atPath: destURL.appendingPathComponent("icon\(iconSize).png", isDirectory: false).path, contents: resizedIcon, attributes: [.extensionHidden: true])
+		if messages {
+			for iconSize in MessagesIconSizes.allCases {
+				let resizedIcon = resize(image: icon, size: iconSize.rawValue)
+				fileManager.createFile(atPath: destURL.appendingPathComponent("icon\(iconSize).png", isDirectory: false).path, contents: resizedIcon, attributes: [.extensionHidden: true])
+			}
+		} else {
+			for iconSize in AppIconSizes.allCases {
+				let resizedIcon = resize(image: icon, size: iconSize.rawValue)
+				fileManager.createFile(atPath: destURL.appendingPathComponent("icon\(iconSize).png", isDirectory: false).path, contents: resizedIcon, attributes: [.extensionHidden: true])
+			}
 		}
 	}
 }
