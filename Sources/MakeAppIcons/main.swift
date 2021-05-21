@@ -7,9 +7,6 @@ struct MakeAppIcon: ParsableCommand {
 	@Flag(help: "Generate icon for iMessage Sticker Pack.")
 	var messages = false
 	
-	@Flag(help: "Fill in transparent areas with white.")
-	var fill = false
-	
 	@Argument(help: "Path to source image.")
 	var source: String
 	
@@ -46,15 +43,22 @@ struct MakeAppIcon: ParsableCommand {
 			let croppedOrigin = landscape ? CGPoint(x: croppedOffset / 2, y: 0) : CGPoint(x: 0, y: croppedOffset / 2)
 			let croppedRect = CGRect(origin: croppedOrigin, size: croppedSize)
 			
-			if fill {
-				NSColor.white.setFill()
-				croppedRect.fill()
-			}
+			NSColor.white.setFill()
+			imageRect.fill()
 			
 			image.draw(in: imageRect, from: croppedRect, operation: .sourceOver, fraction: 1)
 		}
 		resized.unlockFocus()
-		return resized.tiffRepresentation!
+		
+		let alphaImage = NSBitmapImageRep(data: resized.tiffRepresentation!)!
+		let opaqueImage = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: alphaImage.pixelsWide, pixelsHigh: alphaImage.pixelsHigh, bitsPerSample: alphaImage.bitsPerSample, samplesPerPixel: 3, hasAlpha: false, isPlanar: alphaImage.isPlanar, colorSpaceName: alphaImage.colorSpaceName, bytesPerRow: alphaImage.bytesPerRow, bitsPerPixel: alphaImage.bitsPerPixel)!
+		for x in 0..<alphaImage.pixelsWide {
+			for y in 0..<alphaImage.pixelsHigh {
+				let pixelColor = alphaImage.colorAt(x: x, y: y)!
+				opaqueImage.setColor(pixelColor, atX: x, y: y)
+			}
+		}
+		return opaqueImage.representation(using: .png, properties: [:])!
 	}
 	
 	func run() throws {
