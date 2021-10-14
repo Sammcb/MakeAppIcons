@@ -38,7 +38,7 @@ final class MakeAppIconsTests: XCTestCase {
 		let data = pipe.fileHandleForReading.readDataToEndOfFile()
 		let output = String(data: data, encoding: .utf8)
 		
-		XCTAssertEqual(output, "Error: \'<icon-path>\' must contain a valid image file.\nUsage: make-app-icon <source> <destination>\n  See \'make-app-icon --help\' for more information.\n")
+		XCTAssertEqual(output, "Error: \'<icon-path>\' must contain a valid image file.\nUsage: make-app-icon <source> <destination> [--platform <platform>] [--background]\n  See \'make-app-icon --help\' for more information.\n")
 	}
 	
 	func testInvalidPath() throws {
@@ -58,7 +58,7 @@ final class MakeAppIconsTests: XCTestCase {
 		let data = pipe.fileHandleForReading.readDataToEndOfFile()
 		let output = String(data: data, encoding: .utf8)
 		
-		XCTAssertEqual(output, "Error: \'<icon-path>\' must contain a valid image file.\nUsage: make-app-icon <source> <destination>\n  See \'make-app-icon --help\' for more information.\n")
+		XCTAssertEqual(output, "Error: \'<icon-path>\' must contain a valid image file.\nUsage: make-app-icon <source> <destination> [--platform <platform>] [--background]\n  See \'make-app-icon --help\' for more information.\n")
 	}
 	
 	/// Returns path to the built products directory.

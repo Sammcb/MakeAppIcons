@@ -2,16 +2,27 @@ import ArgumentParser
 import AppKit
 
 struct MakeAppIcon: ParsableCommand {
-	static let configuration = CommandConfiguration(abstract: "Generates assets needed to fill the AppIcon asset for iOS apps.")
+	enum Platform: String, ExpressibleByArgument, CaseIterable {
+		case ios
+		case messages
+		case tvos
+		case topshelf
+		case topshelfwide
+	}
 	
-	@Flag(help: "Generate icon for iMessage Sticker Pack.")
-	var messages = false
+	static let configuration = CommandConfiguration(abstract: "Generates assets needed to fill the AppIcon asset for iOS apps.")
 	
 	@Argument(help: "Path to source image.")
 	var source: String
 	
 	@Argument(help: "Destination folder where generated icons are saved.")
 	var destination: String
+	
+	@Option(help: "Generate icons for the specified platform.")
+	var platform: Platform = .ios
+	
+	@Flag(help: "Icon is background layer of tvOS icon.")
+	var background = false
 	
 	func validate() throws {
 		let iconURL = URL(fileURLWithPath: source)
@@ -29,58 +40,60 @@ struct MakeAppIcon: ParsableCommand {
 		}
 	}
 	
-	func resize(image: NSImage, size: NSSize) -> Data {
-		let imageRect = NSScreen.main!.convertRectFromBacking(NSRect(origin: .zero, size: size))
-		let resized = NSImage(size: imageRect.size)
-		resized.lockFocus()
-		if size.width == size.height {
-			image.draw(in: imageRect)
-		} else {
-			let landscape = size.width > size.height
-			let scale = landscape ? size.width / size.height : size.height / size.width
-			let croppedSize = landscape ? NSSize(width: image.size.width * scale, height: image.size.height) : NSSize(width: image.size.width, height: image.size.height * scale)
-			let croppedOffset = landscape ? image.size.width - image.size.width * scale : image.size.height - image.size.height * scale
-			let croppedOrigin = landscape ? CGPoint(x: croppedOffset / 2, y: 0) : CGPoint(x: 0, y: croppedOffset / 2)
-			let croppedRect = CGRect(origin: croppedOrigin, size: croppedSize)
-			
-			NSColor.white.setFill()
-			imageRect.fill()
-			
-			image.draw(in: imageRect, from: croppedRect, operation: .sourceOver, fraction: 1)
-		}
-		resized.unlockFocus()
+	private func resize(image: CGImage, size: NSSize, removeAlpha: Bool) -> Data {
+		let colorSpace = CGColorSpace(name: CGColorSpace.sRGB)!
+		let bitmapInfo = removeAlpha ? CGImageAlphaInfo.noneSkipLast.rawValue : CGImageAlphaInfo.premultipliedLast.rawValue
+		let context = CGContext(data: nil, width: Int(size.width), height: Int(size.height), bitsPerComponent: 8, bytesPerRow: 0, space: colorSpace, bitmapInfo: bitmapInfo)!
+		context.setAllowsAntialiasing(true)
+		context.interpolationQuality = .high
 		
-		let alphaImage = NSBitmapImageRep(data: resized.tiffRepresentation!)!
-		let opaqueImage = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: alphaImage.pixelsWide, pixelsHigh: alphaImage.pixelsHigh, bitsPerSample: alphaImage.bitsPerSample, samplesPerPixel: 3, hasAlpha: false, isPlanar: alphaImage.isPlanar, colorSpaceName: alphaImage.colorSpaceName, bytesPerRow: alphaImage.bytesPerRow, bitsPerPixel: alphaImage.bitsPerPixel)!
-		for x in 0..<alphaImage.pixelsWide {
-			for y in 0..<alphaImage.pixelsHigh {
-				let pixelColor = alphaImage.colorAt(x: x, y: y)!
-				opaqueImage.setColor(pixelColor, atX: x, y: y)
-			}
+		let drawRect = NSRect(origin: .zero, size: size)
+		
+		if image.width % Int(size.width) == 0 && image.height % Int(size.height) == 0 {
+			context.draw(image, in: drawRect)
+		} else {
+			let scale = size.width > size.height ? image.width / Int(size.width) : image.height / Int(size.height)
+			let cropOrigin = size.width > size.height ? CGPoint(x: 0, y: (image.height - (Int(size.height) * scale)) / 2) : CGPoint(x: (image.width - (Int(size.width) * scale)) / 2, y: 0)
+			let cropSize = size.width > size.height ? CGSize(width: image.width, height: Int(size.height) * scale) : CGSize(width: Int(size.width) * scale, height: image.width)
+			let cropRect = CGRect(origin: cropOrigin, size:cropSize)
+			let croppedImage = image.cropping(to: cropRect)!
+			
+			context.draw(croppedImage, in: drawRect)
 		}
-		return opaqueImage.representation(using: .png, properties: [:])!
+		
+		let result = NSImage(cgImage: context.makeImage()!, size: size)
+		let resultBitmap = NSBitmapImageRep(data: result.tiffRepresentation!)!
+		return resultBitmap.representation(using: .png, properties: [:])!
+	}
+	
+	private func generateIcons(sizes: [Sizable], at destURL: URL, removeAlpha: Bool = true) throws {
+		let iconDataFile = CGDataProvider(url: URL(fileURLWithPath: source) as CFURL)!
+		let icon = CGImage(pngDataProviderSource: iconDataFile, decode: nil, shouldInterpolate: false, intent: .defaultIntent)!
+		
+		for iconSize in sizes {
+			let resizedIcon = resize(image: icon, size: iconSize.rawValue, removeAlpha: removeAlpha)
+			FileManager.default.createFile(atPath: destURL.appendingPathComponent("icon\(iconSize).png", isDirectory: false).path, contents: resizedIcon, attributes: [.extensionHidden: true])
+		}
 	}
 	
 	func run() throws {
-		let fileManager = FileManager.default
-		let iconURL = URL(fileURLWithPath: source)
 		let destURL = URL(fileURLWithPath: destination, isDirectory: true)
-		let icon = NSImage(data: fileManager.contents(atPath: iconURL.path)!)!
 		
-		if !fileManager.fileExists(atPath: destURL.path) {
-			try fileManager.createDirectory(at: destURL, withIntermediateDirectories: true, attributes: nil)
+		if !FileManager.default.fileExists(atPath: destURL.path) {
+			try FileManager.default.createDirectory(at: destURL, withIntermediateDirectories: true, attributes: nil)
 		}
 		
-		if messages {
-			for iconSize in MessagesIconSizes.allCases {
-				let resizedIcon = resize(image: icon, size: iconSize.rawValue)
-				fileManager.createFile(atPath: destURL.appendingPathComponent("icon\(iconSize).png", isDirectory: false).path, contents: resizedIcon, attributes: [.extensionHidden: true])
-			}
-		} else {
-			for iconSize in AppIconSizes.allCases {
-				let resizedIcon = resize(image: icon, size: iconSize.rawValue)
-				fileManager.createFile(atPath: destURL.appendingPathComponent("icon\(iconSize).png", isDirectory: false).path, contents: resizedIcon, attributes: [.extensionHidden: true])
-			}
+		switch platform {
+		case .ios:
+			try generateIcons(sizes: iOSIconSize.allCases, at: destURL)
+		case .messages:
+			try generateIcons(sizes: MessagesIconSize.allCases, at: destURL)
+		case .tvos:
+			try generateIcons(sizes: tvOSIconSize.allCases, at: destURL, removeAlpha: background)
+		case .topshelf:
+			try generateIcons(sizes: tvOSTopShelfSize.allCases, at: destURL)
+		case  .topshelfwide:
+			try generateIcons(sizes: tvOSTopShelfWideSize.allCases, at: destURL)
 		}
 	}
 }
