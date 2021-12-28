@@ -49,16 +49,16 @@ struct MakeAppIcon: ParsableCommand {
 		
 		let drawRect = NSRect(origin: .zero, size: size)
 		
-		if image.width % Int(size.width) == 0 && image.height % Int(size.height) == 0 {
+		if Double(image.width) / size.width == Double(image.height) / size.height {
 			context.draw(image, in: drawRect)
 		} else {
-			let scale = size.width > size.height ? image.width / Int(size.width) : image.height / Int(size.height)
-			let cropOrigin = size.width > size.height ? CGPoint(x: 0, y: (image.height - (Int(size.height) * scale)) / 2) : CGPoint(x: (image.width - (Int(size.width) * scale)) / 2, y: 0)
-			let cropSize = size.width > size.height ? CGSize(width: image.width, height: Int(size.height) * scale) : CGSize(width: Int(size.width) * scale, height: image.width)
-			let cropRect = CGRect(origin: cropOrigin, size:cropSize)
-			let croppedImage = image.cropping(to: cropRect)!
-			
-			context.draw(croppedImage, in: drawRect)
+            let scale = size.width > size.height ? Double(image.width) / size.width : Double(image.height) / size.height
+            let cropOrigin = size.width > size.height ? CGPoint(x: 0, y: (image.height - Int(size.height * scale)) / 2) : CGPoint(x: (image.width - Int(size.width * scale)) / 2, y: 0)
+            let cropSize = size.width > size.height ? CGSize(width: image.width, height: Int(size.height * scale)) : CGSize(width: Int(size.width * scale), height: image.width)
+            let cropRect = CGRect(origin: cropOrigin, size:cropSize)
+            let croppedImage = image.cropping(to: cropRect)!
+            
+            context.draw(croppedImage, in: drawRect)
 		}
 		
 		let result = NSImage(cgImage: context.makeImage()!, size: size)
