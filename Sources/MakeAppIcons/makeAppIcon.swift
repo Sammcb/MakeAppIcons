@@ -1,6 +1,7 @@
 import ArgumentParser
 import AppKit
 
+@main
 struct MakeAppIcon: ParsableCommand {
 	enum Platform: String, ExpressibleByArgument, CaseIterable {
 		case ios
@@ -97,5 +98,3 @@ struct MakeAppIcon: ParsableCommand {
 		}
 	}
 }
-
-MakeAppIcon.main()
