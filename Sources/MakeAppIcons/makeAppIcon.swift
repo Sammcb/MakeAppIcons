@@ -11,33 +11,33 @@ struct MakeAppIcon: ParsableCommand {
 		case topshelfwide
 	}
 	
-	static let configuration = CommandConfiguration(abstract: "Generates assets needed to fill the AppIcon asset for iOS apps.")
+	static let configuration = CommandConfiguration(abstract: "Generates assets needed to fill the AppIcon asset for iOS apps.", version: "2.1.0")
 	
-	@Argument(help: "Path to source image.")
+	@Argument(help: "Path to source image")
 	var source: String
 	
-	@Argument(help: "Destination folder where generated icons are saved.")
+	@Argument(help: "Destination folder where generated icons are saved")
 	var destination: String
 	
-	@Option(help: "Generate icons for the specified platform.")
+	@Option(help: "Generate icons for the specified platform")
 	var platform: Platform = .ios
 	
-	@Flag(help: "Icon is background layer of tvOS icon.")
+	@Flag(help: "Icon is background layer of tvOS icon")
 	var background = false
 	
 	func validate() throws {
 		let iconURL = URL(fileURLWithPath: source)
 		
 		guard FileManager.default.fileExists(atPath: iconURL.path) else {
-			throw ValidationError("'<icon-path>' must contain a valid image file.")
+			throw ValidationError("'<icon-path>' must contain a valid image file")
 		}
 		
 		guard let icon = FileManager.default.contents(atPath: iconURL.path) else {
-			throw ValidationError("'<icon-path>' must contain a valid image file.")
+			throw ValidationError("'<icon-path>' must contain a valid image file")
 		}
 		
 		guard NSImage(data: icon) != nil else {
-			throw ValidationError("'<icon-path>' must contain a valid image file.")
+			throw ValidationError("'<icon-path>' must contain a valid image file")
 		}
 	}
 	
