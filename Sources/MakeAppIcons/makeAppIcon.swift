@@ -11,7 +11,7 @@ struct MakeAppIcon: ParsableCommand {
 		case topshelfwide
 	}
 	
-	static let configuration = CommandConfiguration(abstract: "Generates assets needed to fill the AppIcon asset for iOS apps.", version: "2.1.0")
+	static let configuration = CommandConfiguration(abstract: "Generates assets needed to fill the AppIcon asset for iOS apps.", version: "2.1.1")
 	
 	@Argument(help: "Path to source image")
 	var source: String
