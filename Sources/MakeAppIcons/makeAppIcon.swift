@@ -4,14 +4,13 @@ import AppKit
 @main
 struct MakeAppIcon: ParsableCommand {
 	enum Platform: String, ExpressibleByArgument, CaseIterable {
-		case ios
 		case messages
 		case tvos
 		case topshelf
 		case topshelfwide
 	}
 	
-	static let configuration = CommandConfiguration(abstract: "Generates assets needed to fill the AppIcon asset for iOS apps.", version: "2.1.1")
+	static let configuration = CommandConfiguration(abstract: "Generates assets needed to fill the AppIcon asset for tvOS and iMessage Sticker apps.", version: "3.0.0")
 	
 	@Argument(help: "Path to source image")
 	var source: String
@@ -20,7 +19,7 @@ struct MakeAppIcon: ParsableCommand {
 	var destination: String
 	
 	@Option(help: "Generate icons for the specified platform")
-	var platform: Platform = .ios
+	var platform: Platform = .messages
 	
 	@Flag(help: "Icon is background layer of tvOS icon")
 	var background = false
@@ -85,8 +84,6 @@ struct MakeAppIcon: ParsableCommand {
 		}
 		
 		switch platform {
-		case .ios:
-			try generateIcons(sizes: iOSIconSize.allCases, at: destURL)
 		case .messages:
 			try generateIcons(sizes: MessagesIconSize.allCases, at: destURL)
 		case .tvos:
